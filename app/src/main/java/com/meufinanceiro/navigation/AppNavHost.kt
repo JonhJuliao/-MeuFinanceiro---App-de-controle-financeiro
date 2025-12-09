@@ -30,6 +30,10 @@ fun AppNavHost(navController: NavHostController) {
         composable(Screen.Historico.route) {
             HistoricoScreen(navController)
         }
+        composable(Screen.Categorias.route) {
+            CategoriasScreen(navController)
+        }
+
 
     }
 }
