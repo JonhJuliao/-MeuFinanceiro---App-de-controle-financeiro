@@ -140,4 +140,25 @@ fun CardResumo(
             )
         }
     }
+    @Composable
+    fun CardResumo(
+        titulo: String,
+        valor: Double,
+        color: androidx.compose.ui.graphics.Color,
+        textColor: androidx.compose.ui.graphics.Color
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = color)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp).fillMaxWidth()
+            ) {
+                Text(text = titulo, fontSize = 20.sp, color = textColor)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = String.format("R$ %.2f", valor), fontSize = 26.sp, color = textColor)
+            }
+        }
+    }
 }

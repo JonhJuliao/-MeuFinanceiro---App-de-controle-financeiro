@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.List // Mudei para List para não dar erro
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriasScreen(
     navController: NavController,
@@ -30,7 +30,7 @@ fun CategoriasScreen(
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            TopAppBar( // Corrigido para TopAppBar
                 title = { Text("Categorias") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -55,7 +55,8 @@ fun CategoriasScreen(
                 onValueChange = { novaCategoria = it },
                 label = { Text("Nova categoria") },
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Category, contentDescription = null) },
+                // Mudei o ícone aqui para List (Category as vezes precisa de biblioteca extra)
+                leadingIcon = { Icon(Icons.Default.List, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
 
