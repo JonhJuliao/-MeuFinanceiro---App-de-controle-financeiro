@@ -8,6 +8,7 @@ import com.meufinanceiro.ui.screens.HomeScreen
 import com.meufinanceiro.ui.screens.HistoricoScreen
 import com.meufinanceiro.ui.screens.RegistrarScreen
 import com.meufinanceiro.ui.screens.CategoriasScreen
+import com.meufinanceiro.ui.screens.ResumoFinanceiroScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -27,13 +28,8 @@ fun AppNavHost(navController: NavHostController) {
         composable(Screen.Categorias.route) {
             CategoriasScreen(navController)
         }
-        composable(Screen.Historico.route) {
-            HistoricoScreen(navController)
+        composable(Screen.Resumo.route) {
+            ResumoFinanceiroScreen(navController)
         }
-        composable(Screen.Categorias.route) {
-            CategoriasScreen(navController)
-        }
-
-
     }
 }
