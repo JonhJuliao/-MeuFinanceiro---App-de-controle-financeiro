@@ -1,6 +1,7 @@
 package com.meufinanceiro.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,22 +37,55 @@ import com.meufinanceiro.ui.viewmodel.HomeViewModelFactory
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
 
-    // 1. Configuração do Banco e ViewModel
+    // Configuração com Contexto para o Perfil funcionar
     val db = remember { Room.databaseBuilder(context, AppDatabase::class.java, "meu_financeiro.db").build() }
     val repository = remember { TransacaoRepository(db.transacaoDao()) }
+
     val viewModel: HomeViewModel = viewModel(
-        factory = HomeViewModelFactory(repository)
+        factory = HomeViewModelFactory(repository, context)
     )
 
-    // 2. Observa o saldo real
+    // Observa dados (Saldo e Nome)
     val saldo by viewModel.saldoTotal.collectAsState()
+    val nomeUsuario by viewModel.nomeUsuario.collectAsState()
 
-    // 3. Efeito Mágico: Atualiza o saldo sempre que a tela aparece
+    // Atualiza saldo ao voltar pra tela
     LaunchedEffect(Unit) {
         viewModel.carregarSaldo()
     }
 
     var showBalance by remember { mutableStateOf(true) }
+
+    // Controles do Diálogo de Editar Nome
+    var showEditNameDialog by remember { mutableStateOf(false) }
+    var tempName by remember { mutableStateOf("") }
+
+    // DIÁLOGO (Pop-up)
+    if (showEditNameDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditNameDialog = false },
+            title = { Text("Como você quer ser chamado?") },
+            text = {
+                OutlinedTextField(
+                    value = tempName,
+                    onValueChange = { tempName = it },
+                    label = { Text("Seu nome") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (tempName.isNotBlank()) {
+                        viewModel.atualizarNome(tempName)
+                        showEditNameDialog = false
+                    }
+                }) { Text("Salvar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditNameDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -61,7 +95,7 @@ fun HomeScreen(navController: NavController) {
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            // HERO CARD
+            // HERO CARD (Topo colorido)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -82,18 +116,32 @@ fun HomeScreen(navController: NavController) {
                         .fillMaxSize(),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Topo
+                    // LINHA DO TOPO: NOME E AVATAR
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // Ao clicar no nome/topo, abre o editor
+                                tempName = nomeUsuario
+                                showEditNameDialog = true
+                            },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Olá, ${viewModel.nomeUsuario}",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Column {
+                            Text(
+                                text = "Olá,",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = nomeUsuario, // Nome dinâmico
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
                         Surface(
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.2f),
@@ -109,7 +157,7 @@ fun HomeScreen(navController: NavController) {
                         }
                     }
 
-                    // Saldo Real
+                    // SALDO E OLHO
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -142,7 +190,7 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // GRID DE BOTÕES
+            // AÇÕES RÁPIDAS
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
@@ -208,9 +256,7 @@ fun ActionButton(
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
-
         Text(
             text = label,
             fontSize = 12.sp,
