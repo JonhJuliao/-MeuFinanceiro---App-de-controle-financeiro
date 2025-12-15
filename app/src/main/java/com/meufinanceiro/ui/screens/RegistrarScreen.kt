@@ -126,21 +126,35 @@ fun RegistrarScreen(
             val dateLabel = remember(dateMillis) { sdf.format(Date(dateMillis)) }
             val datePickerOnClick = {
                 val c = Calendar.getInstance().apply { timeInMillis = dateMillis }
-                DatePickerDialog(context, { _, y, m, d ->
-                    val nc = Calendar.getInstance()
-                    nc.set(y, m, d)
-                    dateMillis = nc.timeInMillis
-                }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
+                DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        val nc = Calendar.getInstance()
+                        nc.set(year, month, dayOfMonth)
+                        dateMillis = nc.timeInMillis
+                    },
+                    c.get(Calendar.YEAR),
+                    c.get(Calendar.MONTH),
+                    c.get(Calendar.DAY_OF_MONTH)
+                ).show()
             }
 
-            OutlinedTextField(
-                value = dateLabel,
-                onValueChange = {},
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth().clickable { datePickerOnClick() },
-                label = { Text("Data") },
-                leadingIcon = { Icon(Icons.Default.DateRange, null) }
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = dateLabel,
+                    onValueChange = {},
+                    readOnly = true, // Apenas visual
+                    label = { Text("Data") },
+                    leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { datePickerOnClick() }
+                )
+            }
 
             // CATEGORIA
             var expanded by remember { mutableStateOf(false) }
