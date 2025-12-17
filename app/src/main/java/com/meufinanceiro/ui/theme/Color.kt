@@ -2,25 +2,50 @@ package com.meufinanceiro.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// MODO CLARO
-val VerdePrimario = Color(0xFF00695C)
-val VerdePrimarioClaro = Color(0xFF439889)
-val VerdePrimarioEscuro = Color(0xFF003D33)
+// ================================
+// PALETA "EXECUTIVE EMERALD" (SÉRIO & ESCURO)
+// ================================
 
-val AzulSecundario = Color(0xFF0277BD)
+// --- MODO ESCURO ---
+val CyberBlack = Color(0xFF020503)
+val CyberSurface = Color(0xFF0E1612)
 
-val CorReceita = Color(0xFF2E7D32)
-val CorDespesa = Color(0xFFC62828)
+// AQUI ESTÁ A MUDANÇA NOS BOTÕES:
+// Em vez de "Neon" (Radioativo), usamos o "Emerald" (Jóia).
+// É brilhante o suficiente para ler, mas tem peso.
+val ElectricGreen = Color(0xFF10B981)   // Emerald 500
+val SolidGreen = Color(0xFF047857)      // Emerald 700
 
-val FundoClaro = Color(0xFFFAFAFA)
-val TextoPrimarioClaro = Color(0xFF212121)
+// Semântica Dark
+val NeonSuccess = Color(0xFF4ADE80)
+val NeonError = Color(0xFFF87171)
 
-// MODO ESCURO
-val FundoEscuro = Color(0xFF121212)
-val CardEscuro = Color(0xFF1E1E1E)
-val TextoPrimarioEscuro = Color(0xFFE0E0E0)
+// --- MODO CLARO ---
+val TechWhite = Color(0xFFF2F7F5)
+val TechSurface = Color(0xFFFFFFFF)
 
-val CorReceitaEscuro = Color(0xFF66BB6A)
-val CorDespesaEscuro = Color(0xFFEF5350)
-val VerdePrimarioEscuroAlt = Color(0xFF80CBC4)
-val AzulSecundarioEscuro = Color(0xFF81D4FA)
+val ModernGreen = Color(0xFF15803D)     // Verde Sólido
+val TechDarkText = Color(0xFF064E3B)    // Texto Escuro
+
+// Semântica Light
+val LightSuccess = Color(0xFF16A34A)
+val LightError = Color(0xFFDC2626)
+
+// --- FUNDOS SUAVES ---
+val SoftMintGray = Color(0xFFE8F5E9)
+
+// --- GRADIENTES ---
+
+// 1. Dark Mode: "FLORESTA NOTURNA" (O que você pediu)
+// Começa quase preto e vai para um verde sério.
+// É praticamente a versão noturna do seu tema claro.
+val GradientCyberpunk = listOf(
+    Color(0xFF022C22),  // Verde Black (Quase preto)
+    Color(0xFF059669)   // Verde Esmeralda Profundo
+)
+
+// 2. Light Mode: "FLORESTA DIURNA"
+val GradientLightMode = listOf(
+    Color(0xFF064E3B),  // Verde Floresta
+    Color(0xFF10B981)   // Verde Esmeralda
+)

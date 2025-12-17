@@ -45,7 +45,12 @@ android {
 dependencies {
     implementation("androidx.room:room-runtime:2.8.4")
     implementation(libs.androidx.junit.ktx)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.ui.text)
     kapt("androidx.room:room-compiler:2.8.4")
+    implementation ("androidx.compose.material3:material3:1.1.0")
+    implementation ("androidx.compose.material3:material3-window-size-class:1.1.0")
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.0-beta03")
     implementation("androidx.room:room-ktx:2.8.4")
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.core.ktx)

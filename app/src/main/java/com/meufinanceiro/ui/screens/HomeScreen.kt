@@ -2,21 +2,24 @@ package com.meufinanceiro.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+// MUDANÇA 1: Usando ícones arredondados (Mais moderno/suave)
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.ListAlt
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PieChart
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,44 +44,35 @@ import com.meufinanceiro.ui.extensions.categoriaNome
 import com.meufinanceiro.ui.extensions.toCurrency
 import com.meufinanceiro.ui.viewmodel.HomeViewModel
 import com.meufinanceiro.ui.viewmodel.HomeViewModelFactory
-
-// Imports essenciais para usar o StateFlow com 'by'
+import com.meufinanceiro.ui.theme.GradientCyberpunk
+import com.meufinanceiro.ui.theme.GradientLightMode
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 
 @Composable
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
 
-    // 1. CONFIGURAÇÃO DO BANCO E VIEWMODEL
-    // O 'remember' evita recriar o banco a cada recomposição da tela.
     val db = remember { Room.databaseBuilder(context, AppDatabase::class.java, "meu_financeiro.db").build() }
     val repository = remember { TransacaoRepository(db.transacaoDao()) }
 
-    // Cria o ViewModel injetando as dependências necessárias via Factory
     val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(repository, context)
     )
 
-    // 2. OBSERVANDO OS DADOS (Estado Reativo)
-    // A tela observa o ViewModel. Se o saldo ou a lista mudar lá, a tela atualiza aqui.
     val saldo by viewModel.saldoTotal.collectAsState()
     val nomeUsuario by viewModel.nomeUsuario.collectAsState()
-
-    // Lista das 5 últimas transações (Começa vazia para evitar erros de tipo)
     val ultimasTransacoes by viewModel.ultimasTransacoes.collectAsState(initial = emptyList())
 
-    // Efeito Colateral: Recarrega os dados (saldo + lista) toda vez que entramos na tela
     LaunchedEffect(Unit) {
         viewModel.carregarDados()
     }
 
-    // Estados locais para controle visual (mostrar saldo, pop-up de nome)
     var showBalance by remember { mutableStateOf(true) }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
 
-    // --- POP-UP PARA EDITAR O NOME ---
     if (showEditNameDialog) {
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
@@ -94,7 +88,7 @@ fun HomeScreen(navController: NavController) {
             confirmButton = {
                 TextButton(onClick = {
                     if (tempName.isNotBlank()) {
-                        viewModel.atualizarNome(tempName) // Salva
+                        viewModel.atualizarNome(tempName)
                         showEditNameDialog = false
                     }
                 }) { Text("Salvar") }
@@ -103,31 +97,38 @@ fun HomeScreen(navController: NavController) {
         )
     }
 
-    // --- ESTRUTURA DA TELA ---
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        // MUDANÇA 2: Adicionei o FAB (Botão Flutuante)
+        // Isso facilita criar transações com uma mão só (Ergonomia)
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate(Screen.Registrar.route) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = "Nova Transação")
+            }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                // Permite rolar a tela se o conteúdo for maior que o display
                 .verticalScroll(rememberScrollState())
         ) {
 
             // ============================================
-            // 1. HERO CARD (Topo com Saldo e Nome)
+            // 1. HERO CARD
             // ============================================
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(210.dp) // Altura ajustada para ficar mais compacto
+                    .height(210.dp)
                     .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primaryContainer
-                            )
+                        brush = Brush.horizontalGradient(
+                            colors = if (isDark) GradientCyberpunk else GradientLightMode
                         ),
                         shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
                     )
@@ -136,7 +137,6 @@ fun HomeScreen(navController: NavController) {
                     modifier = Modifier
                         .padding(horizontal = 24.dp, vertical = 24.dp)
                         .fillMaxSize(),
-                    // Centraliza o conteúdo verticalmente para agrupar Nome e Saldo
                     verticalArrangement = Arrangement.Center
                 ) {
 
@@ -145,22 +145,15 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                // Clique no topo abre edição de nome
                                 tempName = nomeUsuario
                                 showEditNameDialog = true
                             },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Coluna do Texto (Nome)
-                        // weight(1f) faz ela ocupar todo o espaço possível antes do ícone
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Olá,", color = Color.White.copy(alpha = 0.8f), fontSize = 16.sp)
+                            Text(text = "Olá,", color = Color.White.copy(alpha = 0.9f), fontSize = 16.sp)
 
-                            // Ajuste para nomes longos:
-                            // 1. maxLines = 1 (Não quebra linha)
-                            // 2. overflow = Ellipsis (Coloca "..." se não couber)
-                            // 3. fontSize reduzido para 26.sp (Melhor ajuste)
                             Text(
                                 text = nomeUsuario,
                                 color = Color.White,
@@ -171,18 +164,17 @@ fun HomeScreen(navController: NavController) {
                             )
                         }
 
-                        // Espaçamento entre o texto e o ícone
                         Spacer(modifier = Modifier.width(16.dp))
 
-                        // Ícone de Perfil com fundo translúcido
                         Surface(
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.2f),
                             modifier = Modifier.size(40.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
+                                // Ícone arredondado
                                 Icon(
-                                    imageVector = Icons.Default.Person,
+                                    imageVector = Icons.Rounded.Person,
                                     contentDescription = "Perfil",
                                     tint = Color.White
                                 )
@@ -190,70 +182,67 @@ fun HomeScreen(navController: NavController) {
                         }
                     }
 
-                    // Espaço fixo entre o Nome e o Saldo (para não ficarem colados demais)
                     Spacer(modifier = Modifier.height(30.dp))
 
-                    // LINHA 2: Saldo e Botão "Olho"
+                    // LINHA 2: Saldo
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "Seu saldo total", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                            Text(text = "Seu saldo total", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(8.dp))
 
-                            // Botão para esconder/mostrar saldo
                             IconButton(onClick = { showBalance = !showBalance }, modifier = Modifier.size(24.dp)) {
                                 Icon(
-                                    imageVector = if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    imageVector = if (showBalance) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
                                     contentDescription = "Esconder saldo",
-                                    tint = Color.White.copy(alpha = 0.6f)
+                                    tint = Color.White.copy(alpha = 0.7f)
                                 )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // Exibe o saldo formatado (R$) ou bolinhas de proteção
                         Text(
                             text = if (showBalance) saldo.toCurrency() else "R$ •••••",
                             color = Color.White,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp)
                         )
                     }
                 }
             }
 
             // ============================================
-            // 2. AÇÕES RÁPIDAS (Grid de Botões)
+            // 2. AÇÕES RÁPIDAS
             // ============================================
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Ações Rápidas",
                 modifier = Modifier.padding(horizontal = 24.dp),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Linha com 4 botões de navegação
+            // MUDANÇA 3: Ajuste dos botões
+            // Removemos "Nova Transação" daqui porque virou FAB.
+            // Mantemos os outros 3 centralizados. Fica mais limpo.
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                ActionButton(Icons.Default.Add, "Nova\nTransação") { navController.navigate(Screen.Registrar.route) }
-                ActionButton(Icons.Default.History, "Ver\nHistórico") { navController.navigate(Screen.Historico.route) }
-                ActionButton(Icons.Default.PieChart, "Resumo\nMensal") { navController.navigate(Screen.Resumo.route) }
-                ActionButton(Icons.Default.Settings, "Categorias") { navController.navigate(Screen.Categorias.route) }
+                ActionButton(Icons.Rounded.History, "Ver\nHistórico") { navController.navigate(Screen.Historico.route) }
+                ActionButton(Icons.Rounded.PieChart, "Resumo\nMensal") { navController.navigate(Screen.Resumo.route) }
+                ActionButton(Icons.Rounded.Settings, "Categorias") { navController.navigate(Screen.Categorias.route) }
             }
 
             // ============================================
-            // 3. ÚLTIMAS MOVIMENTAÇÕES (Lista Simplificada)
+            // 3. ÚLTIMAS MOVIMENTAÇÕES
             // ============================================
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Cabeçalho da Lista + Botão "Ver todas"
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Últimas Movimentações", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(text = "Últimas Movimentações", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
 
                 TextButton(onClick = { navController.navigate(Screen.Historico.route) }) {
                     Text("Ver todas")
@@ -262,34 +251,39 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Verifica se a lista está vazia para mostrar mensagem ou os itens
             if (ultimasTransacoes.isEmpty()) {
-                Text(
-                    text = "Nenhuma atividade recente.",
-                    modifier = Modifier.padding(horizontal = 24.dp),
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
+                // MUDANÇA 4: Empty State Bonito (Ícone + Texto)
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ListAlt,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Nenhuma movimentação ainda",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        fontSize = 14.sp
+                    )
+                }
             } else {
-                // Renderiza os cartões pequenos das últimas transações
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    ultimasTransacoes.forEach { item ->
+                    for (item in ultimasTransacoes) {
                         MiniTransacaoCard(transacao = item)
                     }
                 }
             }
 
-            // Espaço extra no rodapé para não colar na borda da tela
-            Spacer(modifier = Modifier.height(24.dp))
+            // Espaço extra no fim para o FAB não cobrir o último item
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
 
-// ============================================
-// COMPONENTES REUTILIZÁVEIS DA HOME
-// ============================================
-
-// Botão redondo das Ações Rápidas
 @Composable
 fun ActionButton(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(80.dp)) {
@@ -319,16 +313,27 @@ fun ActionButton(icon: ImageVector, label: String, onClick: () -> Unit) {
     }
 }
 
-// Card pequeno e compacto para a lista da Home
 @Composable
 fun MiniTransacaoCard(transacao: TransacaoComCategoria) {
     val isReceita = transacao.transacao.tipo == TipoTransacao.RECEITA
-    val icon = if (isReceita) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
+    // Ícones arredondados
+    val icon = if (isReceita) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward
+
     val color = if (isReceita) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val isDark = isSystemInDarkTheme()
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = if (isDark)
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            else
+                Color(0xFFE0E0E0)
+        ),
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
         Row(
@@ -336,7 +341,6 @@ fun MiniTransacaoCard(transacao: TransacaoComCategoria) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Lado Esquerdo: Ícone + Textos
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(shape = CircleShape, color = color.copy(alpha = 0.1f), modifier = Modifier.size(32.dp)) {
                     Box(contentAlignment = Alignment.Center) {
@@ -345,9 +349,8 @@ fun MiniTransacaoCard(transacao: TransacaoComCategoria) {
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = transacao.categoriaNome, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = transacao.categoriaNome, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
 
-                    // Descrição (com tratamento para texto vazio)
                     Text(
                         text = transacao.transacao.descricao?.takeIf { it.isNotBlank() } ?: "Sem descrição",
                         fontSize = 12.sp,
@@ -355,7 +358,6 @@ fun MiniTransacaoCard(transacao: TransacaoComCategoria) {
                     )
                 }
             }
-            // Lado Direito: Valor
             Text(
                 text = transacao.transacao.valor.toCurrency(),
                 fontWeight = FontWeight.Bold,

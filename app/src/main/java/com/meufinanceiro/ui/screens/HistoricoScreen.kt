@@ -1,17 +1,27 @@
 package com.meufinanceiro.ui.screens
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+// MUDANÇA: Ícones Rounded
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,34 +47,22 @@ fun HistoricoScreen(navController: NavController) {
 
     val context = LocalContext.current
 
-    // 1. CONFIGURAÇÃO DE DEPENDÊNCIAS (MVVM)
-    // Inicializa o Banco de Dados e o Repositório.
-    // O 'remember' garante que não recriamos o banco a cada recomposição da tela.
     val db = remember {
         Room.databaseBuilder(context, AppDatabase::class.java, "meu_financeiro.db").build()
     }
     val repository = remember { TransacaoRepository(db.transacaoDao()) }
-
-    // Cria o ViewModel usando uma Factory customizada para injetar o repositório
     val viewModel: HistoricoViewModel = viewModel(factory = HistoricoFactory(repository))
 
-    // 2. OBSERVANDO O ESTADO (Reatividade)
-    // A tela "escuta" o StateFlow do ViewModel.
-    // Sempre que a lista muda no ViewModel, a tela se redesenha automaticamente.
     val lista by viewModel.transacoes.collectAsState()
 
-    // 3. ESTADOS LOCAIS PARA O FILTRO
-    // Guardam as datas selecionadas pelo usuário (pode ser null se não selecionou ainda)
     var dataInicio by remember { mutableStateOf<Long?>(null) }
     var dataFim by remember { mutableStateOf<Long?>(null) }
 
-    // Função auxiliar para abrir o Calendário Nativo do Android (DatePicker)
     fun showDatePicker(onDateSelected: (Long) -> Unit) {
         val calendar = Calendar.getInstance()
         DatePickerDialog(
             context,
             { _, year, month, day ->
-                // Ajusta o calendário para a data escolhida e retorna os milissegundos
                 calendar.set(year, month, day, 0, 0, 0)
                 onDateSelected(calendar.timeInMillis)
             },
@@ -77,14 +75,18 @@ fun HistoricoScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Histórico de Transações") },
+                title = { Text("Histórico", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Voltar")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
 
         Column(
@@ -95,53 +97,71 @@ fun HistoricoScreen(navController: NavController) {
         ) {
 
             // ==========================================
-            // SEÇÃO 1: CARTÃO DE FILTRO DE DATA
+            // SEÇÃO 1: FILTRO (Visual Tech Clean)
             // ==========================================
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                    // Usa a cor "Surface" (Preto/Branco) com borda fina
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
 
-                    Text(
-                        text = "Filtrar por período",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.FilterList, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Filtrar por período", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    // Botões para selecionar Data Início e Fim
+                    // Botões de Data
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             modifier = Modifier.weight(1f),
-                            onClick = { showDatePicker { dataInicio = it } }
+                            onClick = { showDatePicker { dataInicio = it } },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if(dataInicio != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if(dataInicio != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            // Mostra a data formatada ou o texto padrão
-                            Text(dataInicio?.toDateFormat() ?: "Data início")
+                            Icon(Icons.Rounded.CalendarToday, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(dataInicio?.toDateFormat() ?: "Início", fontSize = 12.sp)
                         }
 
                         Button(
                             modifier = Modifier.weight(1f),
-                            onClick = { showDatePicker { dataFim = it } }
+                            onClick = { showDatePicker { dataFim = it } },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if(dataFim != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if(dataFim != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(dataFim?.toDateFormat() ?: "Data fim")
+                            Icon(Icons.Rounded.CalendarToday, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(dataFim?.toDateFormat() ?: "Fim", fontSize = 12.sp)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    // Botões de Ação (Filtrar e Limpar)
+                    // Botões de Ação
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             modifier = Modifier.weight(1f),
-                            // Só habilita o botão se as duas datas foram escolhidas
                             enabled = dataInicio != null && dataFim != null,
-                            onClick = {
-                                viewModel.filtrarPorPeriodo(dataInicio!!, dataFim!!)
-                            }
+                            onClick = { viewModel.filtrarPorPeriodo(dataInicio!!, dataFim!!) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                            )
                         ) {
                             Text("Filtrar")
                         }
@@ -149,11 +169,11 @@ fun HistoricoScreen(navController: NavController) {
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                // Limpa os estados locais e reseta a lista no ViewModel
                                 dataInicio = null
                                 dataFim = null
                                 viewModel.limparFiltro()
-                            }
+                            },
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text("Limpar")
                         }
@@ -164,11 +184,8 @@ fun HistoricoScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // ==========================================
-            // SEÇÃO 2: LISTAGEM INTELIGENTE
+            // SEÇÃO 2: LISTA (Visual Polido)
             // ==========================================
-
-            // Lógica de "Empty State" (Estado Vazio)
-            // Se não houver itens, mostramos um aviso amigável em vez de uma tela em branco.
             if (lista.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -176,34 +193,24 @@ fun HistoricoScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
-                        imageVector = Icons.Default.List,
+                        imageVector = Icons.Rounded.History,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     Text(
                         text = "Nenhuma movimentação",
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = "Suas receitas e despesas aparecerão aqui.",
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             } else {
-                // Se houver itens, usamos LazyColumn para performance (carrega sob demanda)
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(lista) { item ->
                         TransacaoCard(
                             transacao = item,
-                            onClick = {
-                                // Navega para a tela de Registro passando o ID para edição
-                                navController.navigate("registrar?id=${item.transacao.id}")
-                            },
+                            onClick = { navController.navigate("registrar?id=${item.transacao.id}") },
                             onDelete = { viewModel.deletar(item.transacao.id) }
                         )
                     }
@@ -214,7 +221,7 @@ fun HistoricoScreen(navController: NavController) {
 }
 
 // ==========================================
-// COMPONENTE: CARD DA TRANSAÇÃO
+// CARD COM VISUAL TECH (Borda Colorida)
 // ==========================================
 @Composable
 fun TransacaoCard(
@@ -222,25 +229,26 @@ fun TransacaoCard(
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
-    // Define estilo visual baseado no tipo (Receita = Verde/Cima, Despesa = Vermelho/Baixo)
     val isReceita = transacao.transacao.tipo == TipoTransacao.RECEITA
+    val isDark = isSystemInDarkTheme()
 
-    val containerColor = if (isReceita)
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-    else
-        MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
-
-    val valorColor = if (isReceita)
-        MaterialTheme.colorScheme.primary
-    else
-        MaterialTheme.colorScheme.error
-
-    val icone = if (isReceita) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
+    // Define cor baseado no tipo
+    val color = if (isReceita) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val icon = if (isReceita) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward
 
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            // Fundo sólido limpo
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        // A BORDA COLORIDA (O Toque Especial):
+        // Se for Despesa, borda vermelha suave. Se Receita, verde suave.
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (isDark) color.copy(alpha = 0.3f) else Color(0xFFE0E0E0)
+        ),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -250,17 +258,17 @@ fun TransacaoCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // Ícone circular colorido
+            // Ícone circular
             Surface(
                 shape = CircleShape,
-                color = valorColor.copy(alpha = 0.2f),
+                color = color.copy(alpha = 0.1f),
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = icone,
+                        imageVector = icon,
                         contentDescription = null,
-                        tint = valorColor,
+                        tint = color,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -268,41 +276,45 @@ fun TransacaoCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Informações Centrais (Categoria, Descrição, Data)
+            // Textos
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = transacao.categoriaNome, // Extension property usada aqui
-                    fontWeight = FontWeight.Bold
+                    text = transacao.categoriaNome,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 if (!transacao.transacao.descricao.isNullOrBlank()) {
                     Text(
                         text = transacao.transacao.descricao,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
 
                 Text(
-                    text = transacao.transacao.dataMillis.toDateFormat(), // Extension function
+                    text = transacao.transacao.dataMillis.toDateFormat(),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
             }
 
-            // Lado Direito (Valor e Botão Excluir)
+            // Valor e Delete
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = transacao.transacao.valor.toCurrency(), // Extension function
-                    color = valorColor,
+                    text = transacao.transacao.valor.toCurrency(),
+                    color = color,
                     fontWeight = FontWeight.Bold
                 )
 
                 IconButton(onClick = onDelete) {
                     Icon(
-                        Icons.Default.Delete,
+                        Icons.Rounded.Delete,
                         contentDescription = "Excluir",
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
